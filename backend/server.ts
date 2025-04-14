@@ -55,7 +55,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
 
     console.log('Sending request to OpenAI...');
     const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
+      model: "gpt-4o",
       messages: [
         {
           role: "user",
