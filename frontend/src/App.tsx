@@ -8,11 +8,15 @@ import {
 } from '@mui/material'
 import axios from 'axios'
 
+// Default pasta image and ingredients
+const DEFAULT_INGREDIENTS = 'Spaghetti pasta, tomato sauce, fresh basil leaves, herbs';
+
 function App() {
   const [image, setImage] = useState<File | null>(null)
-  const [analysis, setAnalysis] = useState<string>('')
+  const [analysis, setAnalysis] = useState<string>(DEFAULT_INGREDIENTS)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
+  const [isDefaultImage, setIsDefaultImage] = useState(true)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -26,6 +30,7 @@ function App() {
       setImage(file);
       setAnalysis('');
       setError('');
+      setIsDefaultImage(false);
 
       // Automatically analyze the image
       setLoading(true);
@@ -62,9 +67,11 @@ function App() {
         setLoading(false);
       }
     }
-  })
+  });
 
   const extractIngredients = (analysis: string): string => {
+    if (isDefaultImage) return DEFAULT_INGREDIENTS;
+    
     const lines = analysis.split('\n');
     const ingredients = lines
       .filter(line => line.includes('**'))
@@ -133,27 +140,26 @@ function App() {
           Upload Image
         </button>
 
-        {image && (
-          <Box 
-            sx={{ 
+        <Box 
+          sx={{ 
+            width: '100%',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            backgroundColor: 'white',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}
+        >
+          <img
+            src={image ? URL.createObjectURL(image) : './images/pasta.png'}
+            alt="Food"
+            style={{ 
               width: '100%',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              backgroundColor: 'white',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              height: 'auto',
+              display: 'block',
+              objectFit: 'cover'
             }}
-          >
-            <img
-              src={URL.createObjectURL(image)}
-              alt="Uploaded food"
-              style={{ 
-                width: '100%',
-                height: 'auto',
-                display: 'block'
-              }}
-            />
-          </Box>
-        )}
+          />
+        </Box>
 
         {loading && (
           <CircularProgress sx={{ color: 'white' }} />
@@ -171,30 +177,28 @@ function App() {
           </Alert>
         )}
 
-        {analysis && (
-          <Box 
+        <Box 
+          sx={{ 
+            width: '100%',
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            p: 3,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}
+        >
+          <Typography 
+            variant="h6" 
             sx={{ 
-              width: '100%',
-              backgroundColor: 'white',
-              borderRadius: '20px',
-              p: 3,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              fontWeight: 'bold',
+              mb: 1
             }}
           >
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: 'bold',
-                mb: 1
-              }}
-            >
-              Ingredients:
-            </Typography>
-            <Typography variant="body1">
-              {extractIngredients(analysis)}
-            </Typography>
-          </Box>
-        )}
+            Ingredients:
+          </Typography>
+          <Typography variant="body1">
+            {extractIngredients(analysis)}
+          </Typography>
+        </Box>
       </Box>
     </Box>
   )
