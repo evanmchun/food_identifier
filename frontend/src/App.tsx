@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { 
-  Container, 
   Box, 
-  Typography, 
-  Paper, 
+  Typography,
   CircularProgress,
   Alert
 } from '@mui/material'
@@ -21,147 +19,184 @@ function App() {
       'image/*': ['.jpeg', '.jpg', '.png']
     },
     maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      setImage(acceptedFiles[0])
-      setAnalysis('')
-      setError('')
+    onDrop: async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+
+      setImage(file);
+      setAnalysis('');
+      setError('');
+
+      // Automatically analyze the image
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const response = await axios.post('https://food-identifier-unxy.onrender.com/api/analyze-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000,
+        });
+        
+        setAnalysis(response.data.analysis);
+      } catch (err: any) {
+        let errorMessage = 'Error analyzing image. Please try again.';
+        
+        if (err.response?.status === 401) {
+          errorMessage = 'Authentication error. Please check the API configuration.';
+        } else if (err.response?.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please try again later.';
+        } else if (err.code === 'ECONNABORTED') {
+          errorMessage = 'Request timed out. Please try again.';
+        } else if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+          if (err.response.data.details) {
+            errorMessage += `: ${err.response.data.details}`;
+          }
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
     }
   })
 
-  const analyzeImage = async () => {
-    if (!image) return
-
-    setLoading(true)
-    setError('')
-
-    const formData = new FormData()
-    formData.append('image', image)
-
-    try {
-      console.log('Sending image for analysis:', {
-        name: image.name,
-        type: image.type,
-        size: image.size
-      });
-
-      const response = await axios.post('https://food-identifier-unxy.onrender.com/api/analyze-image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 30000,
-      })
-      
-      console.log('Received analysis response:', response.data);
-      setAnalysis(response.data.analysis)
-    } catch (err: any) {
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        code: err.code
-      });
-
-      let errorMessage = 'Error analyzing image. Please try again.';
-      
-      if (err.response?.status === 401) {
-        errorMessage = 'Authentication error. Please check the API configuration.';
-      } else if (err.response?.status === 429) {
-        errorMessage = 'Rate limit exceeded. Please try again later.';
-      } else if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-        if (err.response.data.details) {
-          errorMessage += `: ${err.response.data.details}`;
-        }
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setLoading(false)
-    }
-  }
+  const extractIngredients = (analysis: string): string => {
+    const lines = analysis.split('\n');
+    const ingredients = lines
+      .filter(line => line.includes('**'))
+      .map(line => line.replace(/\*\*/g, '').split(':')[0].trim());
+    return ingredients.join(', ');
+  };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          Food Identifier
-        </Typography>
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        backgroundColor: '#F5A623',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        pt: 4,
+        px: 2
+      }}
+    >
+      <Typography 
+        variant="h3" 
+        component="h1" 
+        sx={{ 
+          color: 'white',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 4,
+          fontSize: { xs: '2rem', sm: '3rem' }
+        }}
+      >
+        Identify Your Ingredients
+      </Typography>
+
+      <Box
+        {...getRootProps()}
+        sx={{
+          width: '100%',
+          maxWidth: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 3
+        }}
+      >
+        <input {...getInputProps()} />
         
-        <Paper
-          {...getRootProps()}
-          sx={{
-            p: 3,
-            textAlign: 'center',
+        <button
+          style={{
+            padding: '12px 32px',
+            fontSize: '1.25rem',
+            backgroundColor: '#FFD700',
+            color: '#000',
+            border: 'none',
+            borderRadius: '50px',
             cursor: 'pointer',
-            backgroundColor: isDragActive ? '#f0f0f0' : 'white',
-            border: '2px dashed #ccc',
-            mb: 3
+            fontWeight: 'bold',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            width: '80%',
+            maxWidth: '300px'
+          }}
+          onClick={() => {
+            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+            if (fileInput) fileInput.click();
           }}
         >
-          <input {...getInputProps()} />
-          {image ? (
-            <Box>
-              <img
-                src={URL.createObjectURL(image)}
-                alt="Uploaded food"
-                style={{ maxWidth: '100%', maxHeight: '300px' }}
-              />
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Click to change image
-              </Typography>
-            </Box>
-          ) : (
-            <Typography variant="body1">
-              Drag and drop an image here, or click to select one
-            </Typography>
-          )}
-        </Paper>
+          Upload Image
+        </button>
 
-        {image && !loading && (
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <button
-              onClick={analyzeImage}
-              style={{
-                padding: '10px 20px',
-                fontSize: '16px',
-                backgroundColor: '#1976d2',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
+        {image && (
+          <Box 
+            sx={{ 
+              width: '100%',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              backgroundColor: 'white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+          >
+            <img
+              src={URL.createObjectURL(image)}
+              alt="Uploaded food"
+              style={{ 
+                width: '100%',
+                height: 'auto',
+                display: 'block'
               }}
-            >
-              Analyze Image
-            </button>
+            />
           </Box>
         )}
 
         {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
-            <CircularProgress />
-          </Box>
+          <CircularProgress sx={{ color: 'white' }} />
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              width: '100%',
+              borderRadius: '12px'
+            }}
+          >
             {error}
           </Alert>
         )}
 
         {analysis && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Detailed Analysis:
+          <Box 
+            sx={{ 
+              width: '100%',
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              p: 3,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 'bold',
+                mb: 1
+              }}
+            >
+              Ingredients:
             </Typography>
-            <Typography variant="body1" style={{ whiteSpace: 'pre-line' }}>
-              {analysis}
+            <Typography variant="body1">
+              {extractIngredients(analysis)}
             </Typography>
-          </Paper>
+          </Box>
         )}
       </Box>
-    </Container>
+    </Box>
   )
 }
 
