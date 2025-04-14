@@ -83,10 +83,10 @@ function App() {
     <Box 
       sx={{ 
         minHeight: '100vh',
-        backgroundColor: '#F5A623',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         pt: 4,
         px: 2
       }}
