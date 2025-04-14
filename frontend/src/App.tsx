@@ -38,15 +38,45 @@ function App() {
     formData.append('image', image)
 
     try {
+      console.log('Sending image for analysis:', {
+        name: image.name,
+        type: image.type,
+        size: image.size
+      });
+
       const response = await axios.post('https://food-identifier-unxy.onrender.com/api/analyze-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 30000, // 30 second timeout
       })
+      
+      console.log('Received analysis response:', response.data);
       setAnalysis(response.data.analysis)
-    } catch (err) {
-      setError('Error analyzing image. Please try again.')
-      console.error(err)
+    } catch (err: any) {
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        code: err.code
+      });
+
+      let errorMessage = 'Error analyzing image. Please try again.';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Authentication error. Please check the API configuration.';
+      } else if (err.response?.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please try again later.';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+        if (err.response.data.details) {
+          errorMessage += `: ${err.response.data.details}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false)
     }
