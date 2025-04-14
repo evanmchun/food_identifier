@@ -55,11 +55,22 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
 
     console.log('Sending request to OpenAI...');
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4-vision-preview",
       messages: [
         {
           role: "user",
-          content: "Analyze this food image and identify all the food items, ingredients, and any visible toppings or garnishes. Provide a detailed breakdown of what you see. Focus on describing the visual characteristics, colors, textures, and arrangement of the food items."
+          content: [
+            {
+              type: "text",
+              text: "Analyze this image and identify all the food items, ingredients, and any visible toppings or garnishes. Provide a detailed breakdown of what you see."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
         }
       ],
       max_tokens: 1000
