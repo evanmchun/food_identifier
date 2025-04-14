@@ -22,6 +22,11 @@ const openai = new OpenAI({
 app.use(cors());
 app.use(express.json());
 
+// Add a test route
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
+
 app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -33,7 +38,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
 
     console.log('Sending request to OpenAI...');
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4-vision-preview",
       messages: [
         {
           role: "user",

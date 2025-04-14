@@ -38,7 +38,7 @@ function App() {
     formData.append('image', image)
 
     try {
-      const response = await axios.post('http://localhost:3001/api/analyze-image', formData, {
+      const response = await axios.post('https://food-identifier-unxy.onrender.com/api/analyze-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
