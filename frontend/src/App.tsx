@@ -6,20 +6,13 @@ import {
   Typography, 
   Paper, 
   CircularProgress,
-  Alert,
-  Chip
+  Alert
 } from '@mui/material'
 import axios from 'axios'
-
-interface Ingredient {
-  name: string;
-  position: { x: number; y: number };
-}
 
 function App() {
   const [image, setImage] = useState<File | null>(null)
   const [analysis, setAnalysis] = useState<string>('')
-  const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
 
@@ -31,36 +24,15 @@ function App() {
     onDrop: (acceptedFiles) => {
       setImage(acceptedFiles[0])
       setAnalysis('')
-      setIngredients([])
       setError('')
     }
   })
-
-  const parseIngredients = (analysisText: string) => {
-    const lines = analysisText.split('\n');
-    const ingredients: Ingredient[] = [];
-    let currentY = 10;
-
-    lines.forEach((line) => {
-      if (line.includes('**') && line.includes(':')) {
-        const name = line.replace(/\*\*/g, '').split(':')[0].trim();
-        ingredients.push({
-          name,
-          position: { x: Math.random() * 60 + 10, y: currentY }
-        });
-        currentY += 20;
-      }
-    });
-
-    return ingredients;
-  };
 
   const analyzeImage = async () => {
     if (!image) return
 
     setLoading(true)
     setError('')
-    setIngredients([])
 
     const formData = new FormData()
     formData.append('image', image)
@@ -81,7 +53,6 @@ function App() {
       
       console.log('Received analysis response:', response.data);
       setAnalysis(response.data.analysis)
-      setIngredients(parseIngredients(response.data.analysis))
     } catch (err: any) {
       console.error('Error details:', {
         message: err.message,
@@ -131,30 +102,12 @@ function App() {
         >
           <input {...getInputProps()} />
           {image ? (
-            <Box sx={{ position: 'relative' }}>
+            <Box>
               <img
                 src={URL.createObjectURL(image)}
                 alt="Uploaded food"
                 style={{ maxWidth: '100%', maxHeight: '300px' }}
               />
-              {ingredients.map((ingredient, index) => (
-                <Chip
-                  key={index}
-                  label={ingredient.name}
-                  sx={{
-                    position: 'absolute',
-                    top: `${ingredient.position.y}%`,
-                    left: `${ingredient.position.x}%`,
-                    transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 1)',
-                    }
-                  }}
-                />
-              ))}
               <Typography variant="body1" sx={{ mt: 2 }}>
                 Click to change image
               </Typography>
