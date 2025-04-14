@@ -34,13 +34,24 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
+  console.log('Received image analysis request');
+  
   try {
     if (!req.file) {
+      console.log('No file provided in request');
       return res.status(400).json({ error: 'No image file provided' });
     }
 
+    console.log('File received:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
     const imageBuffer = req.file.buffer;
     const base64Image = imageBuffer.toString('base64');
+    
+    console.log('Image converted to base64, length:', base64Image.length);
 
     console.log('Sending request to OpenAI...');
     const response = await openai.chat.completions.create({
@@ -74,7 +85,8 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
       code: error.code,
       type: error.type,
       status: error.status,
-      stack: error.stack
+      stack: error.stack,
+      response: error.response?.data
     });
     
     // More specific error handling
@@ -92,13 +104,23 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
       });
     }
     
+    if (error.response?.status === 429) {
+      return res.status(500).json({ 
+        error: 'Rate limit exceeded',
+        details: 'Too many requests to OpenAI API'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Error analyzing image',
-      details: error.message 
+      details: error.message,
+      code: error.code,
+      type: error.type
     });
   }
 });
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log('OpenAI API Key configured:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
 }); 
