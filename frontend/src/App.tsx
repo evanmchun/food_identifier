@@ -18,7 +18,7 @@ function App() {
   const [error, setError] = useState<string>('')
   const [isDefaultImage, setIsDefaultImage] = useState(true)
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png']
     },
