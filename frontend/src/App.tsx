@@ -145,8 +145,8 @@ function App() {
             width: '100%',
             borderRadius: '20px',
             overflow: 'hidden',
-            backgroundColor: 'white',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            backgroundColor: 'transparent',
+            boxShadow: 'none'
           }}
         >
           <img
