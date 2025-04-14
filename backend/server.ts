@@ -19,7 +19,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-app.use(cors());
+// Configure CORS
+app.use(cors({
+  origin: ['https://food-identifier-tau.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 // Add a test route
@@ -67,8 +73,25 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
       message: error.message,
       code: error.code,
       type: error.type,
-      status: error.status
+      status: error.status,
+      stack: error.stack
     });
+    
+    // More specific error handling
+    if (error.code === 'ENOENT') {
+      return res.status(500).json({ 
+        error: 'File system error',
+        details: 'Could not process the image file'
+      });
+    }
+    
+    if (error.response?.status === 401) {
+      return res.status(500).json({ 
+        error: 'Authentication error',
+        details: 'Invalid OpenAI API key'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Error analyzing image',
       details: error.message 
